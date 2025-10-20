@@ -54,4 +54,12 @@ body {
   a {
     color: #00ff00;
   }
-  
+
+  .intro_icon {
+    height: 128px;
+    width: 128px;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    margin: auto;
+  }
