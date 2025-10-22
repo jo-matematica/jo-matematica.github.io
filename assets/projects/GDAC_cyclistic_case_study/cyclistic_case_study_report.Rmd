@@ -1,0 +1,210 @@
+---
+title: 'Cyclistic Bike Use Analysis'
+author: "Joanna D."
+date: "2025-10-22"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+install.packages("tidyverse", repos = "http://cran.us.r-project.org") # Data wrangling & analysis
+install.packages("gridExtra", repos = "http://cran.us.r-project.org") # Plot grids
+library(tidyverse)
+library(grid)
+library(gridExtra)
+library(conflicted) # Conflict managing
+library("scales") # Proper plot visualization
+
+# Collecting data
+setwd("C:/Users/joann/OneDrive/Desktop/Capstone_project/cyclistic-case-study")
+q1_2019 <- read_csv("Trips_2019_Q1.csv")
+q1_2020 <- read_csv("Trips_2020_Q1.csv")
+
+# Converting 2019 Q1 trip_id and rideable_type columns to character for proper stacking
+q1_2019 <- mutate(q1_2019, trip_id = as.character(trip_id),
+                  rideable_type = as.character(rideable_type))
+
+# Merging data frames
+all_trips <- bind_rows(q1_2019, q1_2020)
+
+# Dropping lat, long, birth_year, and gender fields as this data was dropped beginning in 2020
+all_trips <- all_trips %>%
+  select(-c(start_lat, start_lng, end_lat, end_lng, birth_year, gender))
+
+# Adding date, month, and year columns to allow me to aggregate ride data by measurements of time instead of at individual ride levels.
+all_trips$date <- as.Date(all_trips$start_time)
+all_trips$month <- format(as.Date(all_trips$date), "%m")
+all_trips$day_of_month <- format(as.Date(all_trips$date), "%d")
+all_trips$year <- format(as.Date(all_trips$date), "%Y")
+(all_trips <- rename(all_trips
+                     ,day_of_week = start_day))
+
+# CONVERTING TRIP_DURATION TO NUMERIC FOR ANALYSIS
+# Extracting hours, minutes, and seconds and storing as separate fields.
+all_trips <- all_trips %>% 
+  mutate(
+    hours = as.numeric(str_extract(trip_duration, "\\d+(?= hr)")),
+    minutes = as.numeric(str_extract(trip_duration, "\\d+(?= min)")),
+    seconds = as.numeric(str_extract(trip_duration, "\\d+(?= sec)"))
+  )
+
+# Converting hours, minutes, and seconds to seconds and storing in a new field.
+all_trips <- all_trips %>% 
+  mutate(
+    duration_secs = hours * 3600 + minutes * 60 + seconds
+  )
+
+# Removing hours, minutes, and seconds columns as they're no longer needed.
+all_trips <- all_trips %>%
+  select(-hours, -minutes, -seconds)
+```
+
+# Introduction & Business Task
+
+In this project, I analyzed **how casual users** (customers who purchase single-ride or full-day passes) and **members** (customers who purchase annual memberships) **use Cyclistic bikes differently**. The majority of Cyclistic users ride for leisure, but around 30% use our bikes to commute to work each day. Our finance analysts have already concluded that members are much more profitable than casual users, therefore understanding how to market to casuals to convert them to members can increase our profits long-term.
+
+## Data Sources
+
+The data sets used in this project are the first quarter bike-share trips from 2019 and 2020, and are sourced from [Cyclistic's (DIVVY's) public data bucket](https://divvybikes.com/system-data). The data was made available for public viewing and use, subject to conditions, under [this license](https://divvybikes.com/data-license-agreement).
+
+## Cleaning & Manipulation
+
+A full documentation of all cleaning and manipulation done to these data sets prior to analysis can be found [here]().
+
+------------------------------------------------------------------------
+
+‎
+
+# Analysis
+
+*This analysis was done in the R programming language using RStudio.*
+
+## General Overview
+
+To begin my analysis, I first viewed the summary statistics of all trip durations from the first quarters of 2019 and 2020:
+
+```{r summary, echo=TRUE}
+summary(all_trips$duration_secs)
+```
+
+-   For all trips and both user types, the average duration is **1,150 seconds (\~19.2 minutes)**.
+
+‎
+
+## Comparing Casuals & Members
+
+### Trip Duration Stats
+
+Getting more granular, I compared trip durations for casual users vs. members --
+
+```{r average, echo=TRUE}
+aggregate(all_trips$duration_secs ~ all_trips$user_type, FUN = mean)
+```
+
+-   The average trip duration for casuals is‎ 4,957.1 seconds (**82.6 minutes**) and for members is 790.9 seconds (**13.2 minutes**).
+
+‎
+
+```{r middle, echo=TRUE}
+aggregate(all_trips$duration_secs ~ all_trips$user_type, FUN = median)
+```
+
+-   ‎The median trip duration for casuals is 1,396 seconds (**23.3 minutes**) and for members is 510 seconds (**8.5 minutes**).
+
+‎
+
+```{r maximum, echo=TRUE}
+aggregate(all_trips$duration_secs ~ all_trips$user_type, FUN = max)
+```
+
+-   The longest trip duration for casuals is 9,387,024 seconds‎ (**108.7 days**) and for members is 6,096,428 seconds (**70.6 days**)
+
+‎
+
+```{r minimum, echo=TRUE}
+aggregate(all_trips$duration_secs ~ all_trips$user_type, FUN = min)
+```
+
+-   The shortest trip duration for casuals is **61 seconds** and for members is **60 seconds**.
+
+‎
+
+| As shown above, casual users have a higher average, median, maximum, and minimum trip duration than members, which means they generally use our bikes **longer** per trip.
+
+‎‎‎‎
+
+### Number of Trips & Average Duration by Day
+
+Afterwards, I analyzed the number of trips and average trip duration for both user types by each day of the week...
+
+```{r num_trips_avg_dur_user, echo=FALSE}
+all_trips %>% 
+  mutate(weekday = wday(start_time, label = TRUE)) %>% #creates weekday field using wday()
+  group_by(user_type, weekday) %>% #groups by user_type and weekday
+  summarise(number_of_trips = n() #calculates the number of trips and average duration 
+            ,average_duration = mean(duration_secs)) %>% #calculates the average duration
+  arrange(user_type, weekday) #sorts
+
+```
+
+‎
+
+...and then plotted the results on graphs:
+
+```{r graph_num_trips_avg_dur_user, include=FALSE, results='hide'}
+# Visualizing number of trips and average trip duration by user_type and weekday
+numTrips_avgDur_weekday <- all_trips %>% # Storing data frame
+  mutate(weekday = wday(start_time, label = TRUE)) %>%
+  group_by(user_type, weekday) %>%
+  summarise(number_of_trips = n()
+            ,average_duration = mean(duration_secs)) %>% 
+  arrange(user_type, weekday)
+
+# Storing number of trips by weekday plot as object
+numTrips_weekday <- ggplot(numTrips_avgDur_weekday, aes(x = weekday, y = number_of_trips, fill = user_type)) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of Trips by Weekday", subtitle = NULL, x = "Weekday", y = "Number of Trips", fill = "User Type") +
+  scale_y_continuous(labels = comma) +
+  theme(legend.position = "none", plot.margin = margin(1, 1, 1, 1, "cm"))
+
+# Storing average trip duration by weekday plot as object
+avgDur_weekday <- ggplot(numTrips_avgDur_weekday, aes(x = weekday, y = average_duration, fill = user_type)) +
+  geom_col(position = "dodge") +
+  labs(title = "Average Trip Duration by Weekday", subtitle = NULL, x = "Weekday", y = "Avg. Trip Duration (Secs)", fill = "User Type") +
+  scale_y_continuous(labels = comma) +
+  theme(plot.margin = margin(1, 1, 1, 1, "cm"))
+
+# Arranging plots into grid
+grid.arrange(numTrips_weekday, nullGrob(), avgDur_weekday, ncol = 3, widths = c(1, 0.2, 1))
+```
+
+![](num_trips_avg_dur_wday.svg)
+
+-   Taking a look at this, one could already see that although casual users ride our bikes for longer periods on average, there are more trips taken by members throughout the week than casuals.
+
+    -   This supports the fact that a large portion of users ride our bikes for daily commute to work, especially considering there is a higher volume of trips taken during the work week (Monday through Friday) and a lower volume on Sunday and Saturday.‎
+    -   One could conclude that casual users use our bikes longer than members on average to make the most of their single-ride or full-day pass without committing to an annual membership.
+
+-   More single-ride or full-day passes are purchased and used on the weekends than during the work week.
+
+‎‎
+
+# Conclusions
+
+So, looking at these data sets combined, how do casual users and annual members use Cyclistic bikes differently?
+
+| **Analysis** | Casuals | Members |
+|------------------------|------------------------|------------------------|
+| **Duration** | On average, they ride our bikes for longer periods of time (4957.1 seconds/82.6 minutes) | On average, they ride our bikes for shorter periods of time (790.9 seconds/13.2 minutes) |
+| **Frequency + Day of Week** | There are significantly less casual trips (\~9% of all analyzed). Typically more trips taken on the weekend (Sunday & Saturday). | There are significantly more member trips (\~91% of all analyzed). Typically more trips taken during the work week (Monday through Friday). |
+
+‎
+
+These data set show that casuals usually make the most of their single-ride or full-day passes by using the bikes as long as possible, and mostly ride on weekends, which implies that their rides are most likely for leisure. The data also reveals that members typically ride for however long they need to because of their annual membership. They more often use Cyclistic bikes during the work week (Monday through Friday), which suggests that a large portion of them use our bikes for daily commute to work.
+
+‎
+
+‎

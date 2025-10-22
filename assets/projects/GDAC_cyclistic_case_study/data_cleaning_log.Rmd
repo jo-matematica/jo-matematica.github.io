@@ -1,0 +1,788 @@
+---
+title: "Data Cleaning Log"
+author: "Joanna D."
+date: "2025-10-22"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+> The datasets used in this project are the first quarter bike-share
+> trips from 2019 and 2020, and are sourced from [Cyclistic's (Divvy)
+> public data bucket](https://divvybikes.com/system-data). The data was
+> made available for public viewing and use, subject to conditions,
+> under [this license](https://divvybikes.com/data-license-agreement).
+> The 2019 Q1 dataset is referred to as Divvy_Trips_2019_Q1,
+> Trips_2019_Q1, etc.; and the 2020 Q1 dataset is referred to as
+> Divvy_Trips_2020_Q1, Trips_2020_Q1, etc. All data cleaning listed in
+> this document was done in Google Sheets and RStudio unless otherwise
+> stated.
+
+# Google Sheets
+
+## July 8, 2025
+
+-   Made a copy of original 2019 Q1 dataset and named it `Trips_2019_Q1`
+-   Auto-adjusted column width to fit contents
+-   Froze row 1 and applied bold formatting (column headers)
+-   Deleted extra empty rows (365071 and 365072) to accurately search
+    for blanks
+-   Created new sheet in 2019 Q1: `formulas`
+
+## July 18, 2025
+
+-   Checked for duplicates and white spaces to be trimmed; none found
+-   Checked and verified that there were no `trip_id`s that were not
+    equal to 8, as each ID must be exactly 8 characters long:
+    `=(LEN(A2:A365070) <> 8) = TRUE`
+-   Checked and verified that all `start_time`s and `end_time`s are
+    either 18 or 19 characters with formula:
+    `=(ISBETWEEN(LEN(B2:B365070), 18, 19)) = FALSE`
+-   Checked and verified that all `bikeid`s are between 1 and 4
+    characters with formula:
+    `=(ISBETWEEN(LEN(D2:D365070), 1, 4)) = FALSE`
+-   Used **Find** to check and verify that there are no decimals or
+    percentages in the `bikeid` column.
+-   Applied standardized date-time format to `start_time` and `end_time`
+    columns: `2000-01-01 0:00:00`
+-   Applied number format to `tripduration` column, then decreased
+    decimal places to ensure all entries are *whole* numbers.
+    -   Some were whole, some were decimals — the decimals only had .00
+-   Applied number format to `from_station_id` column and decrease
+    decimal places to ensure all entries are whole numbers.
+-   In `formulas` sheet, began checking if `from_station_name` contained
+    correct bike-share stations…
+    -   Process
+        1.  In the `formulas` sheet, I used the `UNIQUE` function to
+            print all unique `from_station_name`s in column `A`, which I
+            named `From Station`.
+        2.  In column `B`, which I labeled `Exists?`, I auto-filled
+            check-boxes in all cells so I could keep track of which
+            stations I’ve checked already.
+        3.  I used the Divvy System Map and Google Maps to confirm
+            whether the station exists or not and is spelled correctly
+            in the dataset.
+        4.  Any rows with station names that needed to be revised were
+            colored in cyan and had a comment on the station name that
+            detailed what needed to be changed.
+        5.  Any rows with stations that existed in the past but were no
+            longer available OR that needed to be removed entirely
+            (trips taken by employees servicing bikes) were colored in
+            red and a comment on the station name that detailed what
+            needed to be changed.
+        6.  The row that I left off at was colored in yellow so I could
+            easily pick up where I left off.
+
+## July 21, 2025
+
+-   In `formulas` sheet, continued checking if `from_station_name`
+    contains correct bike-share stations…
+    -   ❗Despite the station sign in person saying "Loomis St & Taylor
+        St", the Loomis & Taylor station is actually off of Throop St &
+        Taylor St and was changed to the latter name.
+
+## July 22, 2025
+
+-   In `formulas` sheet, continued checking if `from_station_name`
+    contains correct bike-share stations…
+    -   Copied and pasted `From Station`s as text to keep the station
+        names and remove the `UNIQUE` formula.
+    -   Sorted sheet by column `A` from A to Z.
+    -   Added `To Station` column (`C`) because I forgot I need to check
+        that simultaneously (🥹). Filled column with `UNIQUE`
+        `to_station_name`s from the dataset.
+    -   Added `Exists?` with check-boxes in column `D`.
+    -   Sorted range of `To Station` names by column `C` from A to Z.
+
+## July 24, 2025
+
+-   In `formulas` sheet, continued checking if `from_station_name` and
+    `to_station_name` contain correct bike-share stations…
+    -   Station **Ashland Ave & 69th St** does not appear to exist on
+        either G Maps or Divvy Map
+        -   Accessed the dataset: [**Divvy Bicycle Stations -
+            Historical**](https://data.cityofchicago.org/Transportation/Divvy-Bicycle-Stations-Historical/eq45-8inv/about_data)
+            (from City of Chicago data) to confirm whether the station
+            existed in the past.
+            -   The dataset shows that the station existed until about
+                October of 2020.
+    -   Station **Ashland Ave & 21st St** does not appear to exist on
+        either G Maps or Divvy Map
+        -   Repeated steps for Ashland Ave & 69th St, which shows that
+            the Ashland Ave & 21st St station existed until about late
+            May of 2019.
+    -   Station **Chicago Ave & Dempster St** does not appear to exist
+        on Divvy Map, appears as “Permanently closed” on G Maps
+        -   Repeated previous steps of checking City of Chicago
+            historical Divvy station data, which shows that Chicago Ave
+            & Dempster St existed as a station until about October of
+            2020. 
+
+## July 25, 2025
+
+-   In `formulas` sheet, continued checking if `from_station_name` and
+    `to_station_name` contain correct bike-share stations…
+    -   Station **Clark St & Randolph St** does not appear to exist on
+        Divvy Map or G Maps
+        -   Repeated previous steps of checking City of Chicago
+            historical Divvy station data, which shows that Clark St &
+            Randolph St existed as a station until about September of
+            2020. 
+    -   Station **Cornell Ave & Hyde Park Blvd** does not appear to
+        exist on Divvy Map, but it does on G Maps and Apple Map.
+        -   G Maps and Apple Map street views show the station name as
+            Cornell Ave & 50th Pl instead (May - June 2024).
+        -   Divvy Map shows there are e-bikes there, but not a station.
+        -   Repeated previous steps of checking City of Chicago
+            historical Divvy station data, which shows that Cornell Ave
+            & Hyde Park Blvd existed as a station until about September
+            of 2020.
+            -   [The City of Chicago website shows in 2014 that Divvy
+                planned to build a station at Cornell Ave & Hyde Park
+                Blvd.](https://www.chicago.gov/city/en/depts/cdot/provdrs/bike/news/2014/aug/DivvyExpansion.html)
+    -   Station **Cornell Dr & Hayes Dr** does not appear to exist on
+        Divvy Map, and is listed as “Permanently closed” on G Maps.
+        -   G Maps street view shows it existed in June 2019 through
+            July 2020, but was no longer there in August 2024.
+    -   Station **Cottage Grove Ave & 63rd St** does not appear to exist
+        on Divvy Map, but it does on G Maps and Apple Map.
+        -   Repeated previous steps of checking City of Chicago
+            historical Divvy station data, which shows that Cottage
+            Grove Ave & 63rd St existed as a station up until about
+            September of 2020
+            -   G Maps and Apple Map street views conflict with this, as
+                they both show that the station was still present and
+                being used between May and June of 2024.
+    -   Station **Damen Ave & Coulter St** does not appear to exist on
+        Divvy Map, but it does on G Maps and Apple Map.
+        -   Repeated previous steps of checking City of Chicago
+            historical Divvy station data, which shows that Damen Ave &
+            Coulter St existed as a station up until about September of
+
+            2020. 
+
+            -   G Maps and Apple Map street views conflict with this, as
+                they both show that the station was still present and
+                being used between November 2021 and June 2024.
+    -   Station **DIVVY Map Frame B/C Station** is actually called the
+        **Divvy Service Warehouse**
+        -   Found this by searching for DIVVY Map Frame B/C Station in
+            the Divvy Bicycle Stations - Historical dataset and
+            retrieving the location’s latitude and longitude, then
+            entering it into G Maps.
+        -   To be removed.
+
+## July 28, 2025
+
+-   In `formulas` sheet, continued checking if `from_station_name` and
+    `to_station_name` contain correct bike-share stations…
+    -   Continuing from previous situation of Divvy Service Warehouse
+        -   Station DIVVY CASSETTE REPAIR MOBILE STATION (41.895543
+            -87.602921) is unmarked, but appears to be related to bike
+            maintenance, therefore will remove.
+
+## July 29, 2025
+
+-   In `formulas` sheet, continued checking if `from_station_name` and
+    `to_station_name` contain correct bike-share stations…
+
+## July 30, 2025
+
+-   In `formulas` sheet, continued checking if `from_station_name` and
+    `to_station_name` contain correct bike-share stations…
+
+## July 31, 2025
+
+-   In `formulas` sheet, continued checking if `from_station_name` and
+    `to_station_name` contain correct bike-share stations…
+    -   July 31, 2025 10:21 AM **Station name checks complete.**
+    -   Updating `from_station_name` and `to_station_name` in
+        `Divvy_Trips_2019_Q1`...
+        -   Replaced 83 instances of Archer (Damen) Ave & 37th St (\*)
+            with **Archer (Damen) Ave & 37th St**
+        -   Replaced 1,079 instances of Ashland Ave & Lake St (Temp)
+            with **Ashland Ave & Lake St**
+        -   Replaced 2,248 instances of Bissell St & Armitage Ave with
+            **Bissell St & Armitage Ave**
+        -   Replaced 598 instances of Buckingham Fountain (Temp) with
+            **Buckingham Fountain**
+        -   Replaced 1,589 instances of Burling St (Halsted) & Diversey
+            Pkwy (Temp) with **Burling St (Halsted) & Diversey Pkwy**
+        -   Replaced 4,017 instances of Canal St & Monroe St (\*) with
+            **Canal St & Monroe St**
+        -   Replaced 5,857 instances of Clinton St & Jackson Blvd (\*)
+            with **Clinton St & Jackson Blvd**
+        -   Replaced 555 instances of Clinton St & Polk St (\*) with
+            **Clinton St & Polk St**
+        -   Replaced 259 instances of Damen Ave & Walnut (Lake) St (\*)
+            with **Damen Ave & Lake St**
+        -   Replaced 1,524 instances of Dearborn St & Van Buren St (\*)
+            with **Dearborn St & Van Buren St**
+        -   Replaced 911 instances of Dusable Harbor with **DuSable
+            Harbor**
+        -   Replaced 435 instances of Eastlake Ter & Rogers Ave with
+            **Eastlake Ter & Howard St**
+        -   Replaced 20 instances of Eggleston Ave & 69th St (\*) with
+            **Eggleston Ave & 69th St**
+        -   Replaced 1,965 instances of Fairbanks St & Superior St (\*)
+            with **Fairbanks St & Superior St**
+        -   Replaced 2,373 instances of Financial Pl & Ida B Wells Dr
+            (Temp) with **Financial Pl & Ida B Wells Dr**
+        -   Replaced 2,772 instances of Green St & Randolph St with
+            \*\*Green St & Randolph St (\*)\*\*
+        -   Replaced 140 instances of Halsted St & 35th St (\*) with
+            **Halsted St & 35th St**
+        -   Replaced 2,666 instances of Halsted St & Clybourn Ave (\*)
+            with **Halsted St & Clybourn Ave**
+        -   Replaced 1,687 instances of LaSalle Dr & Huron St (\*) with
+            **LaSalle Dr & Huron St**
+        -   Replaced 208 instances of Leavitt St & Belmont Ave (\*) with
+            **Leavitt St & Belmont Ave**
+        -   Replaced 383 instances of Leavitt St & Division St (\*) with
+            **Leavitt St & Division St**
+        -   Replaced 1,659 instances of Lincoln Ave & Roscoe St with
+            \*\*Lincoln Ave & Roscoe St (\*)\*\*
+        -   Replaced 1,256 instances of Lincoln Ave & Belmont Ave with
+            **Lincoln Ave & Belmont Ave (N/A)**
+        -   Replaced 915 instances of Loomis St & Taylor St with
+            **Throop St & Taylor St**
+        -   Replaced 42 instances of MLK Jr Dr & 56th St (\*) with **MLK
+            Jr Dr & 56th St**
+        -   Replaced 4,636 instances of Morgan St & Lake St with
+            \*\*Morgan St & Lake St (\*)\*\*
+        -   Replaced 284 instances of Museum of Science and Industry
+            with **Griffin Museum of Science and Industry**
+        -   Replaced 1,066 instances of Orleans St & Elm St (\*) with
+            **Orleans St & Elm St**
+        -   Replaced 2,137 instances of Orleans St & Hubbard St (\*)
+            with **Orleans St & Hubbard St**
+        -   Replaced 87 instances of Pulaski Rd & Eddy St (Temp) with
+            **Pulaski Rd & Eddy St**
+        -   Replaced 982 instances of Racine Ave & Washington Blvd (\*)
+            with **Racine Ave & Washington Blvd**
+        -   Replaced 2,102 instances of Sangamon St & Washington Blvd
+            (\*) with **Sangamon St & Washington Blvd**
+        -   Replaced 121 instances of Smith Park (\*) with **Smith
+            Park**
+        -   Replaced 7 instances of Stewart Ave & 63rd St (\*) with
+            **Stewart Ave & 63rd St**
+        -   Replaced 4,729 instances of Streeter Dr & Grand Ave with
+            **Navy Pier**
+        -   Replaced 245 instances of Washtenaw Ave & Ogden Ave (\*)
+            with **Washtenaw Ave & Ogden Ave**
+        -   Replaced 568 instances of Wentworth Ave & Cermak Rd (Temp)
+            with \*\*Wentworth Ave & Cermak Rd (\*)\*\*
+        -   Replaced 150 instances of Western Ave & Fillmore St (\*)
+            with **Western Ave & Fillmore St**
+        -   Repalced 640 instances of Wolcott (Ravenswood) Ave &
+            Montrose Ave (\*) with **Wolcott (Ravenswood) Ave & Montrose
+            Ave**
+        -   Replaced 810 instances of Wood St & Chicago Ave (\*) with
+            **Wood St & Chicago Ave**
+        -   Replaced 1,576 instances of Wood St & Taylor St with **Wood
+            St & Taylor St (Temp)**
+        -   Replaced 300 instances of Ashland Ave & 21st St with
+            **Ashland Ave & 21st St (N/A)**
+        -   Replaced 23 instances of Ashland Ave & 69th St with
+            **Ashland Ave & 69th St (N/A)**
+        -   Replaced 408 instances of Chicago Ave & Dempster St with
+            **Chicago Ave & Dempster St (N/A)**
+        -   Replaced 4,210 instances of Clark St & Randolph St with
+            **Clark St & Randolph St (N/A)**
+        -   Re-checked station Cornell Ave & Hyde Park Blvd, which [did
+            not appear as a station](##july-25-2025) until some time
+            between July 25, 2025 and July 31, 2025. No need for name
+            edits or removal. (close call…)
+        -   Replaced 7 instances of Cornell Dr & Hayes Dr with **Cornell
+            Dr & Hayes Dr (N/A)**
+        -   Re-checked station Cottage Grove Ave & 63rd St, which [did
+            not appear as a station](##july-25-2025) until some time
+            between July 25, 2025 and July 31, 2025. No need for name
+            edits or removal. (another one!)
+        -   Replaced 38 instances of Damen Ave & Coulter St with **Damen
+            Ave & Coulter St (N/A)**
+        -   Removed all trips to and from the following stations: -
+            DIVVY Map Frame B/C Station - DIVVY CASSETTE REPAIR MOBILE
+            STATION - `trip_id`s of deleted rows - 21758019 - 21764967 -
+            21842257 - 21902493 - 21915949 - 21920842 - 21926356 -
+            21949128 - 21967146 - 21979478 - 21981589 - 21990694 -
+            21994800 - 21999735 - 22002795 - 22003744 - 22017886 -
+            22020622 - 22027378 - 22067197 - 22067200 - 22095022 -
+            22095154 - 22100544 - 22108999 - 22109359 - 22165514
+        -   Replaced 351 instances of Drake Ave & Fullerton Ave with
+            **Drake Ave & Fullerton Ave (N/A)**
+        -   Replaced 2 instances of Elizabeth St & 59th St with
+            **Elizabeth St & 59th St (N/A)**
+        -   Replaced 3,818 instances of Franklin St & Quincy St with
+            **Franklin St & Quincy St (N/A)**
+        -   **Left off at Lake Shore Dr & Ohio St**
+
+## August 1, 2025
+
+-   Fixing `from_station_name` and `to_station_name` in
+    `Divvy_Trips_2019_Q1`... - Replaced 1,433 instances of Lake Shore Dr
+    & Ohio St with **Lake Shore Dr & Ohio St (N/A)** - Replaced 1,256
+    instances of Lincoln Ave & Belmont Ave with **Lincoln Ave & Belmont
+    Ave (N/A)** - Replaced 3,368 instances of Marshfield Ave & Cortland
+    St with **Marshfield Ave & Cortland St (N/A)** - Replaced 3,455
+    instances of McClurg Ct & Illinois St with **McClurg Ct & Illinois
+    St (N/A)** - Replaced 1,896 instances of Milwaukee Ave & Wabansia
+    Ave with **Milwaukee Ave & Wabansia Ave (N/A)** - Re-checked station
+    MLK Jr Dr & Pershing Rd, which did not appear as a station until
+    some time between July 29, 2025 and August 1, 2025. No need for name
+    edits or removal. (!!!) - For checking missing stations, I used the
+    Divvy Bicycle Stations dataset (a list of current stations) to
+    confirm that the stations I marked in red in the `formulas` sheet
+    are no longer present. - Replaced 1,731 instances of Racine Ave (May
+    St) & Fulton St with **Racine Ave (May St) & Fulton St (N/A)**
+    -   August 1, 2025 10:53 AM **Updating station names complete**
+-   In `Divvy_Trips_2019_Q1`, renamed columns:
+    -   D: `bikeid` → `bike_id`
+    -   E: `tripduration` → `trip_duration`
+    -   J: `usertype` → `user_type`
+    -   L: `birthyear` → `birth_year`
+-   Auto-adjusted column length to fit content
+-   Updated column E: `trip_duration` → `trip_duration_secs`
+-   Inserted new column to right of column E: `trip_duration_h_mm_ss`
+    -   In column F, converted all trip durations from seconds to hours,
+        minutes, and seconds in this format: 0:00:00
+        -   Used the formula `=[trip_duration_secs]/(24*60*60)` and
+            formatted the output as a decimal with 6 places, and then
+            converted the decimal to the duration format.
+-   Hid column E `trip_duration_secs`
+-   In column L `gender`, used filters to only show blanks.
+    -   Filled blanks with “N/A”
+-   In column M `birth_year`, used filters to only show blanks.
+    -   Filled blanks with “N/A”
+-   Noticed that the earliest birth year in the dataset is 1900, which
+    as of 2025 was **about 125 years ago.** 🥸
+    -   There are 69 records where the user entered the birth year 1900.
+    -   Noticed and corrected a station name error: Lincoln Ave &
+        Belmont Ave (N/A) (N/A) → **Lincoln Ave & Belmont Ave (N/A)**
+    -   Birth years of concern:
+        -   1900 (125 yo, 69 records, all subscribers)
+        -   1901 (124 yo, 2 records, both customers)
+        -   1918 (107 yo, 40 records, all subscribers)
+        -   1921 (104 yo, 60 records, all subscribers)
+    -   **Leaving off note: consider possibly filling in abnormal birth
+        years with “N/A”?**
+
+## August 4, 2025
+
+-   Continued from the previous situation of abnormal birth years…
+    -   Replaced abnormal birth years with N/A
+-   Applied bold formatting row 1: column headers
+-   August 4, 2025 10:07 AM **Switching over to cleaning**
+    `Trips_2020_Q1` dataset
+    -   Froze and applied bold formatting to row 1: column headers
+    -   Created sheet `formulas`
+    -   Auto-adjusted column width
+    -   Adjusted column order
+        -   From:
+            -   **ride_id → rideable_type → started_at → ended_at →
+                start_station_name → start_station_id → end_station_name
+                → end_station_id → start_lat → start_lng → end_lat →
+                end_lng → member_casual**
+        -   To:
+            -   **ride_id → rideable_type → started_at → ended_at →
+                start_station_id → start_station_name → end_station_id →
+                end_station_name → start_lat → start_lng → end_lat →
+                end_lng → member_casual**
+    -   Sorted sheet by column C (`started_at`) from A to Z
+
+## August 11, 2025
+
+-   Standardized column names across data sets
+    -   In `Divvy_Trips_2020_Q1`:
+        -   `A1`: `ride_id` → `trip_id`
+        -   `C1`: `started_at` → `start_time`
+        -   `D1`: `ended_at` → `end_time`
+        -   `M1`: `member_casual` → `user_type`
+    -   In `Divvy_Trips_2019_Q1`:
+        -   `G1`: `from_station_id` → `start_station_id`
+        -   `H1`: `from_station_name` → `start_station_name`
+        -   `I1`: `to_station_id` → `end_station_id`
+        -   `J1`: `to_station_id` → `end_station_name`
+-   In the 2019 Q1 dataset, renamed `user_type`s:
+    -   Subscriber → Member
+    -   Customer → Casual
+-   In the 2020 Q1 dataset
+    -   Fixed `user_type` names:
+
+        -   casual → Casual
+        -   member → Member
+
+    -   Inserted one column to the right of column D `end_time`: column
+        E, `trip_duration_h_mm_ss`
+
+    -   In column E, inserted formula for each cell to calculate trip
+        duration (`end_time - start_time`), formatted as a duration in
+        hours, minutes, and seconds (0:00:000)
+
+    -   Applied filters and checked column E, noticed there were trip
+        durations less than 60 seconds (0:01:00), some even in the
+        negatives…!
+
+        -   [The data set's source stated that trips taken by staff and
+            trips that are below 60 seconds in length were removed from
+            the data sets they
+            share](https://divvybikes.com/system-data), so any that meet
+            this criteria must be removed if still present (they still
+            are in the 2020 Q1 dataset as of August 11, 2025 8:11 AM
+            lol).
+
+    -   Deleted blank rows 426889 and 426890
+
+    -   Applied filters to only show negative trip durations (**Text
+        contains: -**); all 116 trips had a start station of “HQ QR”,
+        and 115 of them had an end station of “HQ QR” — the other one
+        end station was blank.
+
+        -   Looked up the latitude and longitude of the HQ QR station —
+            it’s the **Divvy Service Warehouse**.
+        -   Deleted all trips with negative durations because they were
+            all taken by staff servicing bikes at/around the warehouse
+            AND less than 60 seconds.
+
+    -   Applied filters to only show trip durations less than 60 seconds
+        (Text starts with: 0:00)
+
+        -   Started deleting all trips less than 60 seconds…technical
+            difficulties 🥔🔨
+
+## August 18, 2025
+
+-   Still in 2020 Q1 Trips: Finished deleting all trips less than 60
+    seconds! 🎊 August 18, 2025 9:35 AM
+-   Applied filters to only show trips with start stations of “HQ QR” —
+    4 displayed, end station is the same
+    -   Trips deleted August 18, 2025 9:40 AM
+-   Applied filters to only show trips with end stations of “HQ QR” — 1
+    displayed, start station is Adler Planetarium
+    -   The trip duration is 62 hrs, 23 mins, and 34 secs, which is
+        about 2.5 days.
+    -   Trip deleted
+-   Trip with an abnormal duration of **2,607 hours, 30 minutes, and 24
+    seconds, which is about 108 days!!!**
+    -   **WILL SWING BACK TO THIS**
+        -   <https://help.divvybikes.com/hc/en-us/articles/360033484791-What-if-I-keep-a-bike-out-too-long>
+-   Inserted new column C: `start_day`
+    -   In column C, filled cells with formula to print the day of the
+        week each trip started: `=TEXT(X#, “dddd”)`
+    -   In 2019 Q1 Trips dataset, did the same (inserted new column B of
+        the same name with the similar formulas in each cell below).
+-   Back in the 2020 Q1 Trips dataset, in the `formulas` sheet I printed
+    all unique start station names and end station names to repeat the
+    process of checking the existence of stations.
+    -   NTS: Use the 2019 Q1 Trips station names to help you quickly
+        identify which still exist!!!!!!
+
+## August 19, 2025
+
+-   Trips_2020_Q1
+    -   In `formulas` sheet, combined start and end station names in one
+        column and used the `UNIQUE` function to get all unique start
+        and end station names so I can check them simultaneously. Wish I
+        did that the first time! The more you know 🌠
+    -   **Checking validity of stations**
+        -   Left off at row 33 — Austin Blvd & Lake St
+
+## August 20, 2025
+
+-   Trips_2020_Q1
+    -   **Checking validity of stations**; `formulas`
+        -   To rename:
+            -   Bissell St & Armitage Ave → \*\*Bissell St & Armitage
+                Ave (\*)\*\*
+            -   Burling St (Halsted) & Diversey Pkwy (Temp) → **Burling
+                St & Diversey Pkwy**
+            -   California Ave & Francis Pl → **California Ave & Francis
+                Pl**
+            -   Chicago Ave & Dempster St → **Chicago Ave & Dempster St
+                (N/A)**
+            -   Clark St & Randolph St → **Clark St & Randolph St
+                (N/A)**
+            -   Cornell Dr & Hayes Dr → **Cornell Dr & Hayes Dr (N/A)**
+            -   Damen Ave & Coulter St → **Damen Ave & Coulter St
+                (N/A)**
+            -   Damen Ave & Walnut (Lake) St (\*) → **Damen Ave & Lake
+                St**
+            -   Drake Ave & Fullerton Ave → **Drake Ave & Fullerton Ave
+                (N/A)**
+            -   Dusable Harbor → **DuSable Harbor**
+            -   Eastlake Ter & Rogers Ave → **Eastlake Ter & Howard St**
+            -   Eggleston Ave & 69th St (\*) → **Eggleston Ave & 69th
+                St**
+            -   Elizabeth (May) St & Fulton St → **Elizabeth St & Fulton
+                St**
+            -   Elizabeth St & 59th St → **Elizabeth St & 59th St
+                (N/A)**
+            -   Franklin St & Adams St (Temp) → **Franklin St & Adams
+                St**
+            -   Green St & Randolph St → \*\*Green St & Randolph St
+                (\*)\*\*
+        -   To remove:
+            -   HUBBARD ST BIKE CHECKING (LBS-WH-TEST)
+        -   Left off at row 273: Humboldt Blvd & Armitage Ave
+
+## August 26, 2025
+
+-   Trips_2020_Q1
+    -   **Checking validity of stations**; `formulas`
+        -   To rename:
+            -   Lake Shore Dr & Ohio St → **Lake Shore Dr & Ohio St
+                (N/A)**
+            -   Leavitt St & Belmont Ave (\*) → **Leavitt St & Belmont
+                Ave**
+            -   Leavitt St & Division St (\*) → **Leavitt St & Division
+                St**
+            -   Lincoln Ave & Belmont Ave → **Lincoln Ave & Belmont Ave
+                (N/A)**
+            -   Lincoln Ave & Roscoe St → \*\*Lincoln Ave & Roscoe St
+                (\*)\*\*
+            -   Marshfield Ave & Cortland St → **Marshfield Ave &
+                Cortland St (N/A)**
+            -   McClurg Ct & Illinois St → **McClurg Ct & Illinois St
+                (N/A)**
+            -   Milwaukee Ave & Wabansia Ave → **Milwaukee Ave &
+                Wabansia Ave (N/A)**
+            -   Morgan St & Lake St → \*\*Morgan St & Lake St (\*)\*\*
+            -   Museum of Science and Industry → **Griffin Museum of
+                Science and Industry**
+            -   Pulaski Rd & Eddy St (Temp) → **Pulaski Rd & Eddy St**
+            -   Racine Ave & Washington Blvd (\*) → **Racine Ave &
+                Washington Blvd**
+            -   Smith Park (\*) → **Smith Park**
+        -   To remove:
+            -   MTL-ECO5.1-01
+                -   In this dataset, records with this station had both
+                    start and end coordinates 41.9171,-87.7482, which
+                    pointed to **4854 West Armitage Avenue, Chicago, IL
+                    60639**. Oddly, when I searched for MTL-ECO5.1-01 in
+                    the Divvy Bicycle Stations - Historical dataset,
+                    rows with the coordinates 41.862949,-87.608585
+                    returned, which pointed to **Huntington Bank
+                    Pavilion at Northerly Island, 1300 South Linn White
+                    Drive, Chicago, IL 60605**.
+                -   Either way, this thing's gotta go. :]
+        -   Left off at row 494: South Shore Dr & 67th St
+
+## August 27, 2025
+
+-   Trips_2020_Q1
+    -   **Checking validity of stations**; `formulas`
+        -   To rename:
+            -   Stewart Ave & 63rd St (\*) → **Stewart Ave & 63rd St**
+            -   Streeter Dr & Grand Ave → **Navy Pier**
+            -   Throop (Loomis) St & Taylor St → **Throop St & Taylor
+                St**
+            -   Wentworth Ave & 24th St (Temp) → **Wentworth Ave & 24th
+                St**
+            -   Wentworth Ave & Cermak Rd (Temp) → \*\*Wentworth Ave &
+                Cermak Rd (\*)\*\*
+            -   Western Ave & Fillmore St (\*) → **Western Ave &
+                Fillmore St**
+            -   Wood St & Chicago Ave (\*) → **Wood St & Chicago Ave**
+            -   Wood St & Taylor St → **Wood St & Taylor St (Temp)**
+            -   Ashland Ave & 69th St → **Ashland Ave & 69th St (N/A)**
+        -   August 27, 2025 12:37 PM Checking complete!
+    -   Updating station names in `Divvy_Trips_2020_Q1`
+        -   Replaced 3,263 instances of Bissell St & Armitage Ave with
+            \*\*Bissell St & Armitage Ave (\*)\*\*
+        -   Replaced 2,512 instances of Burling St (Halsted) & Diversey
+            Pkwy (Temp) with **Burling St & Diversey Pkwy**
+        -   Replaced 557 instances of California Ave & Francis Pl (Temp)
+            with **California Ave & Francis Pl**
+
+## September 2, 2025
+
+-   Updating station names in `Divvy_Trips_2020_Q1`
+    -   Replaced 493 instances of Chicago Ave & Dempster St with
+        **Chicago Ave & Dempster St (N/A)**
+    -   Replaced 4,736 instances of Clark St & Randolph St with **Clark
+        St & Randolph St (N/A)**
+    -   Replaced 17 instances of Cornell Dr & Hayes Dr with **Cornell Dr
+        & Hayes Dr (N/A)**
+    -   Replaced 86 instances of Damen Ave & Coulter St with **Damen Ave
+        & Coulter St (N/A)**
+    -   Replaced 427 instances of Damen Ave & Walnut (Lake) St (\*) with
+        **Damen Ave & Lake St**
+    -   Replaced 538 instances of Drake Ave & Fullerton Ave with **Drake
+        Ave & Fullerton Ave (N/A)**
+    -   Replaced 1,522 instances of Dusable Harbor with **DuSable
+        Harbor**
+    -   Replaced 722 instances of Eastlake Ter & Rogers Ave with
+        **Eastlake Ter & Howard St**
+    -   Replaced 2 instances of Eggleston Ave & 69th St (\*) with
+        **Eggleston Ave & 69th St**
+    -   Replaced 5 instances of Elizabeth St & 59th St with **Elizabeth
+        St & 59th St (N/A)**
+    -   Replaced 1,455 instances of Elizabeth (May) St & Fulton St with
+        **Elizabeth St & Fulton St**
+    -   Replaced 2,859 instances of Franklin St & Adams St with
+        **Franklin St & Adams St**
+    -   Replaced 2,813 instances of Green St & Randolph St with
+        \*\*Green St & Randolph St (\*)\*\*
+    -   Removed records with start and end stations **HUBBARD ST BIKE
+        CHECKING (LBS-WH-TEST)**
+    -   Replaced 2,352 instances of Lake Shore Dr & Ohio St with **Lake
+        Shore Dr & Ohio St (N/A)**
+    -   Replaced 495 instances of Leavitt St & Belmont Ave (\*) with
+        **Leavitt St & Belmont Ave**
+    -   Replaced 675 instances of Leavitt St & Division St (\*) with
+        **Leavitt St & Division St**
+    -   Replaced 1,497 instances of Lincoln Ave & Belmont Ave with
+        **Lincoln Ave & Belmont Ave (N/A)**
+    -   Replaced 1,919 instances of Lincoln Ave & Roscoe St with
+        \*\*Lincoln Ave & Roscoe St (\*)\*\*
+    -   Replaced 3,735 instances of Marshfield Ave & Cortland St with
+        **Marshfield Ave & Cortland St (N/A)**
+    -   Replaced 3,982 instances of McClurg Ct & Illinois St with
+        **McClurg Ct & Illinois St (N/A)**
+    -   Replaced 2,205 instances of Milwaukee Ave & Wabansia Ave with
+        **Milwaukee Ave & Wabansia Ave (N/A)**
+    -   Replaced 5,571 instances of Morgan St & Lake St with \*\*Morgan
+        St & Lake St (\*)\*\*
+    -   Removed records with start and end stations **MTL-ECO5.1-01**
+    -   Replaced 396 instances of Museum of Science and Industry with
+        **Griffin Museum of Science and Industry**
+    -   Replaced 222 instances of Pulaski Rd & Eddy St (Temp) with
+        **Pulaski Rd & Eddy St**
+    -   Replaced 1,114 instances of Racine Ave & Washington Blvd (\*)
+        with **Racine Ave & Washington Blvd**
+    -   Replaced 184 instances of Smith Park (\*) with **Smith Park**
+    -   Replaced 7 instances of Stewart Ave & 63rd St (\*) with
+        **Stewart Ave & 63rd St**
+    -   Replaced 5,180 instances of Streeter Dr & Grand Ave with **Navy
+        Pier**
+    -   Replaced 1,331 instances of Throop (Loomis) St & Taylor St with
+        **Throop St & Taylor St**
+    -   Replaced 287 instances of Wentworth Ave & 24th St (Temp) with
+        **Wentworth Ave & 24th St**
+    -   Replaced 751 instances of Wentworth Ave & Cermak Rd (Temp) with
+        \*\*Wentworth Ave & Cermak Rd (\*)\*\*
+    -   Replaced 518 instances of Western Ave & Fillmore St (\*) with
+        **Western Ave & Fillmore St**
+    -   Replaced 1,151 instances of Wood St & Chicago Ave (\*) with
+        **Wood St & Chicago Ave**
+    -   Replaced 1,637 instances of Wood St & Taylor St with **Wood St &
+        Taylor St (Temp)**
+    -   Replaced 3 instances of Ashland Ave & 69th St with **Ashland Ave
+        & 69th St (N/A)**
+    -   Done with station names September 2, 2025 11:33 AM
+
+## September 3, 2025
+
+-   Hid (**DID NOT DELETE**) columns that were not present in the other
+    dataset September 3, 2025 11:57 AM
+    -   `Trips_2019_Q1` — these columns were not present in
+        `Trips_2020_Q1` and could not be obtained nor inferred.
+        -   `birth_year`
+        -   `gender`
+    -   `Trips_2020_Q1` — these columns were not present in
+        `Trips_2019_Q1` , and although they could have been obtained,
+        they were not relevant for my analysis.
+        -   `start_lat`
+        -   `start_lng`
+        -   `end_lat`
+        -   `end_lng`
+        -   `rideable_type`
+            -   All entries in this column were “docked_bike”
+
+## September 4, 2025
+
+-   Swung back to `Trips_2019_Q1` to fix some formulas, column names,
+    and formats.
+    -   `bike_id` → `rideable_type`
+        -   Converted all cells under the `rideable_type` column to
+            plain text for easier merging in R. ✨
+    -   Dropped `trip_duration_secs` column
+    -   Cleared cells in `trip_duration_h_mm_ss` column
+        -   `trip_duration_h_mm_ss` → `trip_duration`
+            -   Did the same in `Trips_2020_Q1` .
+        -   Changed duration formatting: 1:02:03 → 1 hr 2 min 3 sec
+            -   Did the same in `Trips_2020_Q1` .
+        -   Inserted formula in `trip_duration` column to calculate
+            duration: `D#-C#`
+-   Done; exported each dataset to .csv files. September 4, 2025 1:23 PM
+
+# RStudio
+
+## September 3 to \~9, 2025
+
+> For more details on my analysis done in R, check out this [R
+> script](https://github.com/jody-3/cyclistic-case-study/blob/main/Analysis_from_2025-09-03_to_2025-09-10.R).
+
+-   Installed and loaded necessary packages:
+
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+library(conflicted)
+```
+
+-   Imported data set .csv files:
+
+```{r}
+# Changed working directory first with command: setwd("path/to/directory")
+q1_2019 <- read_csv("Trips_2019_Q1.csv")
+q1_2020 <- read_csv("Trips_2020_Q1.csv")
+```
+
+-   Converted `trip_id` and `rideable_type` columns to character types
+    for proper stacking:
+
+```{r}
+q1_2019 <- mutate(q1_2019, trip_id = as.character(trip_id),
+                  rideable_type = as.character(rideable_type))
+```
+
+-   Merged data frames:
+
+```{r}
+all_trips <- bind_rows(q1_2019, q1_2020)
+```
+
+-   Dropped `lat`, `long`, `birth_year`, and `gender` fields as this
+    data was dropped beginning in 2020:
+
+```{r}
+all_trips <- all_trips %>%
+  select(-c(start_lat, start_lng, end_lat, end_lng, birth_year, gender))
+```
+
+-   Added date, month, and year columns to allow for aggregation of ride
+    data by measurements of time instead of at individual ride levels:
+
+```{r}
+all_trips$date <- as.Date(all_trips$start_time)
+all_trips$month <- format(as.Date(all_trips$date), "%m")
+all_trips$day_of_month <- format(as.Date(all_trips$date), "%d")
+all_trips$year <- format(as.Date(all_trips$date), "%Y")
+(all_trips <- rename(all_trips
+                     ,day_of_week = start_day))
+```
+
+-   Converted `trip_duration` to numeric type, with duration in seconds
+    only, for analysis:
+
+```{r}
+# Extracted hours, minutes, and seconds and stored as separate fields
+all_trips <- all_trips %>% 
+  mutate(
+    hours = as.numeric(str_extract(trip_duration, "\\d+(?= hr)")),
+    minutes = as.numeric(str_extract(trip_duration, "\\d+(?= min)")),
+    seconds = as.numeric(str_extract(trip_duration, "\\d+(?= sec)"))
+  )
+
+# Converted hours, minutes, and seconds to seconds only and stored in a new field
+all_trips <- all_trips %>% 
+  mutate(
+    duration_secs = hours * 3600 + minutes * 60 + seconds
+  )
+
+# Removed hours, minutes, and seconds columns as they're no longer needed
+all_trips <- all_trips %>%
+  select(-hours, -minutes, -seconds)
+```
