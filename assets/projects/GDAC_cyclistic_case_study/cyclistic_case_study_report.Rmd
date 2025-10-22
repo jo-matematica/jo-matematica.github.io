@@ -72,7 +72,7 @@ The data sets used in this project are the first quarter bike-share trips from 2
 
 ## Cleaning & Manipulation
 
-A full documentation of all cleaning and manipulation done to these data sets prior to analysis can be found [here]().
+A full documentation of all cleaning and manipulation done to these data sets prior to analysis can be found [here](https://github.com/jo-matematica/jo-matematica.github.io/blob/main/assets/projects/GDAC_cyclistic_case_study/data_cleaning_log.Rmd).
 
 ------------------------------------------------------------------------
 
